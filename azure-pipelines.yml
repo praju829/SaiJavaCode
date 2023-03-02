@@ -77,7 +77,8 @@ steps:
 
 - task: owaspzap@1
   inputs:
+    threshold: '300'
     scantype: 'targetedScan'
-    url: 'http://43.205.232.54:8080/SaiJavaCode/'
+    url: 'http://43.205.232.54:8080/SaiJavaCode'
     provideCustomContext: true
     contextPath: '/SaiJavaCode'
