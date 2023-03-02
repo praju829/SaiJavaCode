@@ -1,0 +1,82 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+- task: Maven@4
+  inputs:
+    mavenPomFile: 'pom.xml'
+    goals: 'compile'
+    publishJUnitResults: true
+    testResultsFiles: '**/surefire-reports/TEST-*.xml'
+    javaHomeOption: 'JDKVersion'
+    mavenVersionOption: 'Default'
+    mavenAuthenticateFeed: false
+    effectivePomSkip: false
+    sonarQubeRunAnalysis: false 
+
+- task: dependency-check-build-task@6
+  inputs:
+    projectName: 'SaiJavaCode'
+    scanPath: '/home/vsts/work/1/s/target'
+    format: 'HTML' 
+
+- task: SnykSecurityScan@1
+  inputs:
+    serviceConnectionEndpoint: 'snyk'
+    testType: 'app'
+    monitorWhen: 'always'
+    failOnIssues: false 
+
+- task: SonarCloudPrepare@1
+  inputs:
+    SonarCloud: 'sonarcloud'
+    organization: 'prajktamhapsekar829'
+    scannerMode: 'CLI'
+    configMode: 'manual'
+    cliProjectKey: 'prajktamhapsekar829'
+    cliProjectName: 'SaiJavaCode'
+    cliSources: '.'
+    extraProperties: |
+      # Additional properties that will be passed to the scanner, 
+      # Put one key=value per line, example:
+      # sonar.exclusions=**/*.bin
+      sonar.java.binaries=. 
+
+- task: SonarCloudAnalyze@1 
+- task: SonarCloudPublish@1
+  inputs:
+    pollingTimeoutSec: '300'
+
+- task: Maven@4
+  inputs:
+    mavenPomFile: 'pom.xml'
+    goals: 'clean install'
+    publishJUnitResults: true
+    testResultsFiles: '**/surefire-reports/TEST-*.xml'
+    javaHomeOption: 'JDKVersion'
+    mavenVersionOption: 'Default'
+    mavenAuthenticateFeed: false
+    effectivePomSkip: false
+    sonarQubeRunAnalysis: false 
+
+- task: CopyFilesOverSSH@0
+  inputs:
+    sshEndpoint: 'tomcat-devsecops-connection'
+    sourceFolder: '/home/vsts/work/1/s/target'
+    contents: '**/*.war'
+    targetFolder: '/var/lib/tomcat9/webapps'
+    readyTimeout: '20000' 
+
+- task: owaspzap@1
+  inputs:
+    scantype: 'targetedScan'
+    url: 'http://43.205.232.54:8080/SaiJavaCode/'
+    provideCustomContext: true
+    contextPath: '/SaiJavaCode'
