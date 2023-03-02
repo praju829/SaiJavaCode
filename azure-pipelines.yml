@@ -70,7 +70,7 @@ steps:
 - task: CopyFilesOverSSH@0
   inputs:
     sshEndpoint: 'tomcat-devsecops-connection'
-    sourceFolder: '/home/vsts/work/1/s/target'
+    sourceFolder: '/home/vsts/work/1/s/webapp/target'
     contents: '**/*.war'
     targetFolder: '/var/lib/tomcat9/webapps'
     readyTimeout: '20000' 
